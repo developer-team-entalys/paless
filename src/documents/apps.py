@@ -30,6 +30,9 @@ class DocumentsConfig(AppConfig):
         document_consumption_finished.connect(add_or_update_document_in_llm_index)
         document_updated.connect(run_workflows_updated)
 
+        # Register tenant admin creation signal
+        from documents.signals.tenant_handlers import create_tenant_admin_user  # noqa: F401
+
         import documents.schema  # noqa: F401
 
         AppConfig.ready(self)
