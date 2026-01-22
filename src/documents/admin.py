@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib import admin
+from django.contrib import admin, messages
 from guardian.admin import GuardedModelAdmin
 from treenode.admin import TreeNodeModelAdmin
 
@@ -234,6 +234,19 @@ class TenantAdmin(admin.ModelAdmin):
     def storage_container(self, obj):
         return obj.storage_container
     storage_container.short_description = "Storage Container"
+
+    def save_model(self, request, obj, form, change):
+        is_new = obj.pk is None
+        super().save_model(request, obj, form, change)
+
+        if is_new:
+            admin_username = f"{obj.subdomain}-admin"
+            self.message_user(
+                request,
+                f"Tenant created. Admin user '{admin_username}' created automatically. "
+                f"Check server logs for the generated password.",
+                level=messages.INFO
+            )
 
 
 admin.site.register(Tenant, TenantAdmin)
