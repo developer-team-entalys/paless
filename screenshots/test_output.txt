@@ -1,0 +1,45 @@
+======================================================================
+TESTING TENANT ADMIN PERMISSIONS
+======================================================================
+
+✅ Found user: testcorp-admin
+✅ Authentication successful for testcorp-admin
+
+📊 Direct permissions count: 60
+✅ Admin has 60 direct permissions (expected 56+)
+
+🔐 Testing specific permissions:
+  ✅ documents.add_document              - Can add documents
+  ✅ documents.view_document             - Can view documents
+  ✅ documents.change_document           - Can change documents
+  ✅ documents.delete_document           - Can delete documents
+  ✅ documents.add_tag                   - Can add tags
+  ✅ documents.view_tag                  - Can view tags
+  ✅ documents.change_tag                - Can change tags
+  ✅ documents.delete_tag                - Can delete tags
+  ✅ auth.add_user                       - Can add users
+  ✅ auth.view_user                      - Can view users
+  ✅ auth.change_user                    - Can change users
+
+📋 Sample of assigned permissions (first 15):
+  - auth.add_user
+  - auth.change_user
+  - auth.delete_user
+  - auth.view_user
+  - documents.add_correspondent
+  - documents.change_correspondent
+  - documents.delete_correspondent
+  - documents.view_correspondent
+  - documents.add_customfield
+  - documents.change_customfield
+  - documents.delete_customfield
+  - documents.view_customfield
+  - documents.add_customfieldinstance
+  - documents.change_customfieldinstance
+  - documents.delete_customfieldinstance
+
+👥 TenantGroup memberships: 0
+
+======================================================================
+✅ ALL TESTS PASSED - Tenant admin has correct permissions!
+======================================================================
