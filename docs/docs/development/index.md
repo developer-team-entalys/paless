@@ -79,6 +79,12 @@ Implement and manage Celery background tasks in multi-tenant deployments.
 **Troubleshoot task execution errors**
 → Check [Troubleshooting](./celery-multi-tenant-tasks.md#troubleshooting) in Celery Tasks Guide
 
+**Understand tenant admin user creation**
+→ Read [Tenant Admin Permissions](../security/tenant-admin-permissions.md)
+
+**Debug permission issues for tenant admins**
+→ See [Troubleshooting](../security/tenant-admin-permissions.md#troubleshooting) in Tenant Admin Permissions
+
 ## Development Stack
 
 Paperless NGX development uses:

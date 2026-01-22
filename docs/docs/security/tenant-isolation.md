@@ -860,6 +860,7 @@ For full documentation, see [Group Tenant Isolation](./group-tenant-isolation.md
 - [Note Tenant Isolation](./note-tenant-isolation.md) - Note model tenant isolation implementation
 - [User Tenant Isolation](./user-tenant-isolation.md) - User model tenant isolation implementation
 - [Group Tenant Isolation](./group-tenant-isolation.md) - TenantGroup model tenant isolation implementation
+- [Tenant Admin Permissions](./tenant-admin-permissions.md) - Automatic tenant admin creation and Django permissions fix
 - [Thread-Local Tenant Context](./thread-local-tenant-context.md) - **Critical**: Shared storage implementation and bug fix
 - [Security Debt Tracker](./deferred-findings.md) - Known security issues and deferred findings
 - [PostgreSQL Row-Level Security Documentation](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
