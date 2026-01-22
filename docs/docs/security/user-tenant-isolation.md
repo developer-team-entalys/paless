@@ -87,6 +87,12 @@ class UserProfile(models.Model):
         help_text=_("Tenant to which this user belongs"),
     )
 
+    is_platform_admin = models.BooleanField(
+        default=False,
+        verbose_name=_("is platform admin"),
+        help_text=_("Platform administrators can manage all tenants"),
+    )
+
     class Meta:
         verbose_name = _("user profile")
         verbose_name_plural = _("user profiles")
@@ -104,6 +110,63 @@ class UserProfile(models.Model):
 - **Database Index**: `tenant_id` field is indexed for query performance
 - **OneToOne Relationship**: Each user has exactly one profile
 - **Cascade Deletion**: Deleting a user automatically deletes their profile
+- **Platform Admin Flag**: `is_platform_admin` boolean field allows designation of cross-tenant administrators
+
+---
+
+### Platform Administrator Support
+
+**Location**: `src/paperless/models.py:380-384`
+
+The `is_platform_admin` field enables designation of users who can manage resources across all tenants:
+
+```python
+is_platform_admin = models.BooleanField(
+    default=False,
+    verbose_name=_("is platform admin"),
+    help_text=_("Platform administrators can manage all tenants"),
+)
+```
+
+**Key Characteristics:**
+
+- **Default False**: All users are created as regular tenant users by default
+- **Cross-Tenant Access**: When `True`, indicates the user has elevated privileges
+- **Explicit Assignment**: Must be manually set for users requiring platform-level access
+- **Security Consideration**: Should be used sparingly and only for trusted administrators
+
+:::info Platform Admin vs Superuser
+Platform admins (`is_platform_admin=True`) differ from Django superusers:
+- **Superusers**: Full Django admin access, bypass all permission checks
+- **Platform Admins**: Application-level designation for cross-tenant management
+
+Both concepts serve different purposes and should be used appropriately based on security requirements.
+:::
+
+**Usage Example:**
+
+```python
+from django.contrib.auth.models import User
+from paperless.models import UserProfile
+
+# Create platform administrator
+platform_admin = User.objects.create_user(
+    username='platform_admin',
+    email='admin@platform.local',
+    password='secure_password'
+)
+
+# Set platform admin flag
+platform_admin.profile.is_platform_admin = True
+platform_admin.profile.save()
+
+# Verify
+assert platform_admin.profile.is_platform_admin == True
+```
+
+:::warning Migration Requirement
+The `is_platform_admin` field was added in migration `0009_userprofile_is_platform_admin.py`. Existing UserProfile records created before this migration will have `is_platform_admin=False` by default.
+:::
 
 ---
 
@@ -155,7 +218,11 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
         # Create profile if we have a tenant_id
         if tenant_id:
             try:
-                UserProfile.objects.create(user=instance, tenant_id=tenant_id)
+                UserProfile.objects.create(
+                    user=instance,
+                    tenant_id=tenant_id,
+                    is_platform_admin=False
+                )
                 logger.info(f"Created UserProfile for {instance.username} with tenant {tenant_id}")
             except Exception as e:
                 logger.error(
@@ -290,7 +357,11 @@ def create(self, validated_data):
     # Signal handler will create it, but we ensure tenant_id is set correctly
     if tenant_id:
         if not hasattr(user, 'profile'):
-            UserProfile.objects.create(user=user, tenant_id=tenant_id)
+            UserProfile.objects.create(
+                user=user,
+                tenant_id=tenant_id,
+                is_platform_admin=False
+            )
         elif user.profile.tenant_id != tenant_id:
             # Update tenant_id if profile exists but has wrong tenant
             user.profile.tenant_id = tenant_id
@@ -502,7 +573,12 @@ The following migrations implement user tenant isolation:
    - Creates OneToOne relationship to `auth_user`
    - Creates index on `tenant_id`
 
-**Migration Example:**
+2. **0009_userprofile_is_platform_admin.py**: Adds `is_platform_admin` field
+   - Location: `src/paperless/migrations/0009_userprofile_is_platform_admin.py`
+   - Adds `is_platform_admin` boolean field with default `False`
+   - Applied: January 2026 (fixes user creation failures)
+
+**Migration Examples:**
 
 ```python
 # src/paperless/migrations/0007_userprofile.py
@@ -522,6 +598,21 @@ operations = [
     migrations.AddIndex(
         model_name='userprofile',
         index=models.Index(fields=['tenant_id'], name='userprofile_tenant_idx'),
+    ),
+]
+```
+
+```python
+# src/paperless/migrations/0009_userprofile_is_platform_admin.py
+operations = [
+    migrations.AddField(
+        model_name='userprofile',
+        name='is_platform_admin',
+        field=models.BooleanField(
+            default=False,
+            help_text='Platform administrators can manage all tenants',
+            verbose_name='is platform admin'
+        ),
     ),
 ]
 ```

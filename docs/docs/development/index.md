@@ -10,6 +10,17 @@ Welcome to the Paperless NGX development guides. This section covers tools, proc
 
 ## Available Guides
 
+### [Local Development Environment](./local-development-setup.md)
+Docker Compose setup for local development using dev-env.sh script.
+
+- Quick start guide with Docker Compose
+- Complete dev-env.sh command reference
+- Fresh base image build enforcement (January 2026 improvements)
+- Service architecture and volume management
+- Development workflow and hot reload
+- Troubleshooting and performance tuning
+- Migration from old development setup
+
 ### [Development Container Setup](./devcontainer-setup.md)
 Set up VSCode DevContainer for consistent, containerized development environment.
 
@@ -46,7 +57,10 @@ Implement and manage Celery background tasks in multi-tenant deployments.
 
 ### I want to...
 
-**Set up my development environment**
+**Set up local development with Docker Compose**
+→ Read [Local Development Environment](./local-development-setup.md)
+
+**Set up VSCode DevContainer development**
 → Read [Development Container Setup](./devcontainer-setup.md)
 
 **Start backend services for development**
@@ -78,6 +92,12 @@ Implement and manage Celery background tasks in multi-tenant deployments.
 
 **Troubleshoot task execution errors**
 → Check [Troubleshooting](./celery-multi-tenant-tasks.md#troubleshooting) in Celery Tasks Guide
+
+**Fix Docker build issues or stale cached images**
+→ See [Troubleshooting](./local-development-setup.md#troubleshooting) in Local Development Environment
+
+**Understand recent Docker build improvements**
+→ Read [Docker Build Improvements](./local-development-setup.md#docker-build-improvements-january-2026)
 
 **Understand tenant admin user creation**
 → Read [Tenant Admin Permissions](../security/tenant-admin-permissions.md)
