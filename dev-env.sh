@@ -78,8 +78,11 @@ cmd_up() {
     print_success "Base image built successfully"
     echo ""
 
-    print_info "Building and starting services..."
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up --build -d
+    print_info "Building component images (forcing use of fresh base image)..."
+    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build --pull --no-cache
+
+    print_info "Starting services (forcing recreation)..."
+    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up --force-recreate -d
 
     if [ $? -ne 0 ]; then
         print_error "Failed to start services"
@@ -212,8 +215,8 @@ cmd_rebuild() {
         exit 1
     fi
 
-    print_info "Rebuilding service images without cache..."
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build --no-cache
+    print_info "Rebuilding service images without cache (forcing use of fresh base image)..."
+    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build --pull --no-cache
 
     if [ $? -eq 0 ]; then
         print_success "Images rebuilt successfully"
