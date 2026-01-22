@@ -100,6 +100,48 @@ class TenantAdminCreationTestCase(TestCase):
         self.assertIn('add_document', permission_codenames)
         self.assertIn('change_document', permission_codenames)
 
+    def test_admin_user_has_permissions(self):
+        """Test that admin user has permissions assigned DIRECTLY to user."""
+        tenant = Tenant.objects.create(
+            name="Test Org",
+            subdomain="testorg"
+        )
+        admin_user = User.objects.get(username=f"{tenant.subdomain}-admin")
+
+        # CRITICAL: Check user has DIRECT permissions (not just via group)
+        user_perms = admin_user.user_permissions.all()
+        self.assertGreater(
+            user_perms.count(),
+            50,
+            "Admin user should have 56+ direct permissions"
+        )
+
+        # Verify Django's has_perm() works (this is what the app uses)
+        self.assertTrue(
+            admin_user.has_perm('documents.add_document'),
+            "Admin should be able to add documents"
+        )
+        self.assertTrue(
+            admin_user.has_perm('documents.change_document'),
+            "Admin should be able to change documents"
+        )
+        self.assertTrue(
+            admin_user.has_perm('documents.delete_document'),
+            "Admin should be able to delete documents"
+        )
+        self.assertTrue(
+            admin_user.has_perm('documents.view_document'),
+            "Admin should be able to view documents"
+        )
+        self.assertTrue(
+            admin_user.has_perm('documents.add_tag'),
+            "Admin should be able to add tags"
+        )
+        self.assertTrue(
+            admin_user.has_perm('auth.add_user'),
+            "Admin should be able to add users"
+        )
+
     def test_no_duplicate_admin_user(self):
         """Test that duplicate admin users are not created."""
         # Create tenant (admin user created via signal)

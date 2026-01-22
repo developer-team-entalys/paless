@@ -16,6 +16,7 @@ from documents.models.base import get_current_tenant_id, set_current_tenant_id
 from documents.signals.tenant_handlers import (
     create_tenant_admin_group,
     generate_secure_password,
+    get_admin_permissions,
 )
 from paperless.models import UserProfile
 
@@ -166,6 +167,11 @@ class Command(BaseCommand):
 
                 # Add user to the admin group
                 admin_group.users.add(admin_user)
+
+                # CRITICAL FIX: Also assign permissions directly to user
+                # Django's ModelBackend doesn't check TenantGroup, only user.user_permissions
+                admin_permissions = get_admin_permissions()
+                admin_user.user_permissions.set(admin_permissions)
 
             finally:
                 set_current_tenant_id(old_tenant_id)

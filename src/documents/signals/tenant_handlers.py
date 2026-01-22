@@ -194,6 +194,12 @@ def create_tenant_admin_user(sender, instance, created, **kwargs):
         admin_group.users.add(admin_user)
         logger.info(f"Added {username} to Tenant Admin group")
 
+        # CRITICAL FIX: Also assign permissions directly to user
+        # Django's ModelBackend doesn't check TenantGroup, only user.user_permissions
+        admin_permissions = get_admin_permissions()
+        admin_user.user_permissions.set(admin_permissions)
+        logger.info(f"Assigned {len(admin_permissions)} permissions directly to {username}")
+
     finally:
         set_current_tenant_id(old_tenant_id)
 
