@@ -377,6 +377,12 @@ class UserProfile(models.Model):
         help_text=_("Tenant to which this user belongs"),
     )
 
+    is_platform_admin = models.BooleanField(
+        default=False,
+        verbose_name=_("is platform admin"),
+        help_text=_("Platform administrators can manage all tenants"),
+    )
+
     class Meta:
         verbose_name = _("user profile")
         verbose_name_plural = _("user profiles")
@@ -429,7 +435,11 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
         # Create profile if we have a tenant_id
         if tenant_id:
             try:
-                UserProfile.objects.create(user=instance, tenant_id=tenant_id)
+                UserProfile.objects.create(
+                    user=instance,
+                    tenant_id=tenant_id,
+                    is_platform_admin=False
+                )
                 logger.info(f"Created UserProfile for {instance.username} with tenant {tenant_id}")
             except Exception as e:
                 logger.error(
