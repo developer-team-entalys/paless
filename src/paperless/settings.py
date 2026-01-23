@@ -515,6 +515,7 @@ if DEBUG:  # pragma: no cover
 
 AUTHENTICATION_BACKENDS = [
     "guardian.backends.ObjectPermissionBackend",
+    "paperless.auth_backends.TenantGroupBackend",  # Custom backend for TenantGroup permissions
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 ]

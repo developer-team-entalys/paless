@@ -105,7 +105,33 @@ class UserSerializer(PasswordValidationMixin, serializers.ModelSerializer):
         )
 
     def get_inherited_permissions(self, obj) -> list[str]:
-        return obj.get_group_permissions()
+        """
+        Get all inherited permissions from tenant groups.
+
+        This includes permissions from:
+        - TenantGroup (tenant-scoped groups)
+        - Standard Django auth.Group (for backward compatibility)
+
+        Returns a sorted list of permission codenames (e.g., 'documents.add_document').
+        """
+        permissions = set()
+
+        # Get permissions from Django auth.Group (backward compatibility)
+        permissions.update(obj.get_group_permissions())
+
+        # Get permissions from TenantGroup
+        if hasattr(obj, 'tenant_groups'):
+            for tenant_group in obj.tenant_groups.all():
+                tenant_group_perms = tenant_group.permissions.values_list('codename', flat=True)
+                # Add app_label prefix to match Django's permission format
+                for perm in tenant_group_perms:
+                    # Get the full permission string (app_label.codename)
+                    perm_obj = tenant_group.permissions.filter(codename=perm).first()
+                    if perm_obj:
+                        full_perm = f"{perm_obj.content_type.app_label}.{perm_obj.codename}"
+                        permissions.add(full_perm)
+
+        return sorted(list(permissions))
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
@@ -202,6 +228,12 @@ class ProfileSerializer(PasswordValidationMixin, serializers.ModelSerializer):
     )
     is_mfa_enabled = serializers.SerializerMethodField()
     has_usable_password = serializers.SerializerMethodField()
+    user_permissions = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field="codename",
+    )
+    inherited_permissions = serializers.SerializerMethodField()
 
     def get_is_mfa_enabled(self, user: User) -> bool:
         mfa_adapter = get_mfa_adapter()
@@ -209,6 +241,35 @@ class ProfileSerializer(PasswordValidationMixin, serializers.ModelSerializer):
 
     def get_has_usable_password(self, user: User) -> bool:
         return user.has_usable_password()
+
+    def get_inherited_permissions(self, obj) -> list[str]:
+        """
+        Get all inherited permissions from tenant groups.
+
+        This includes permissions from:
+        - TenantGroup (tenant-scoped groups)
+        - Standard Django auth.Group (for backward compatibility)
+
+        Returns a sorted list of permission codenames (e.g., 'documents.add_document').
+        """
+        permissions = set()
+
+        # Get permissions from Django auth.Group (backward compatibility)
+        permissions.update(obj.get_group_permissions())
+
+        # Get permissions from TenantGroup
+        if hasattr(obj, 'tenant_groups'):
+            for tenant_group in obj.tenant_groups.all():
+                tenant_group_perms = tenant_group.permissions.values_list('codename', flat=True)
+                # Add app_label prefix to match Django's permission format
+                for perm in tenant_group_perms:
+                    # Get the full permission string (app_label.codename)
+                    perm_obj = tenant_group.permissions.filter(codename=perm).first()
+                    if perm_obj:
+                        full_perm = f"{perm_obj.content_type.app_label}.{perm_obj.codename}"
+                        permissions.add(full_perm)
+
+        return sorted(list(permissions))
 
     class Meta:
         model = User
@@ -221,6 +282,8 @@ class ProfileSerializer(PasswordValidationMixin, serializers.ModelSerializer):
             "social_accounts",
             "has_usable_password",
             "is_mfa_enabled",
+            "user_permissions",
+            "inherited_permissions",
         )
 
 
