@@ -1,3 +1,10 @@
+---
+sidebar_position: 1
+title: Multi-Tenant Isolation Architecture
+description: Defense-in-depth tenant isolation using Django middleware and PostgreSQL Row-Level Security
+keywords: [tenant isolation, multi-tenant, RLS, PostgreSQL, Django middleware, security, TenantGroup, authentication backend]
+---
+
 # Multi-Tenant Isolation Architecture
 
 ## Overview
@@ -780,6 +787,8 @@ For full documentation, see [Note Tenant Isolation](./note-tenant-isolation.md).
 :::info Group Model Isolation
 As of January 2026, groups are tenant-isolated using the **TenantGroup** model. Groups are automatically filtered by current tenant context via the `TenantManager`, ensuring that group configurations and permissions remain isolated within tenant boundaries.
 
+**NEW:** A custom `TenantGroupBackend` authentication backend enables Django to recognize permissions from `TenantGroup`, providing seamless integration with Django's permission system.
+
 For complete details, see [Group Tenant Isolation](./group-tenant-isolation.md).
 :::
 
@@ -803,9 +812,58 @@ class TenantGroup(ModelWithOwner):
 1. **Inherits from ModelWithOwner**: Provides automatic `tenant_id` field and `TenantManager`
 2. **Automatic Tenant Filtering**: `TenantGroup.objects` automatically filters by tenant context
 3. **Unique Names per Tenant**: Group names are unique within each tenant, but different tenants can have groups with the same name
-4. **Permission Compatibility**: Works with Django's standard permission system
-5. **Superuser Bypass**: Superusers can view all groups via `TenantGroup.all_objects`
-6. **Audit Logging**: All group access events logged to `paperless.audit.tenant`
+4. **Custom Authentication Backend**: `TenantGroupBackend` makes Django's `has_perm()` check TenantGroup permissions
+5. **Permission Compatibility**: Works seamlessly with Django's standard permission system
+6. **Superuser Bypass**: Superusers can view all groups via `TenantGroup.all_objects`
+7. **Audit Logging**: All group access events logged to `paperless.audit.tenant`
+
+#### TenantGroupBackend Authentication
+
+**File:** `src/paperless/auth_backends.py`
+
+A custom authentication backend extends Django's permission system to recognize TenantGroup permissions:
+
+```python
+class TenantGroupBackend(ModelBackend):
+    """
+    Custom authentication backend that checks TenantGroup permissions.
+
+    Permission Resolution Order:
+    1. User-level permissions (user.user_permissions)
+    2. Standard Django Group permissions (user.groups)
+    3. TenantGroup permissions (user.tenant_groups) ✨ NEW
+    """
+```
+
+**Configuration:** `src/paperless/settings.py`
+
+```python
+AUTHENTICATION_BACKENDS = [
+    'guardian.backends.ObjectPermissionBackend',
+    'paperless.auth_backends.TenantGroupBackend',  # TenantGroup support
+    'django.contrib.auth.backends.ModelBackend',
+]
+```
+
+**How It Works:**
+
+When `user.has_perm('documents.add_document')` is called:
+
+1. Django iterates through `AUTHENTICATION_BACKENDS`
+2. `TenantGroupBackend.has_perm()` checks:
+   - User-level permissions
+   - Django Group permissions
+   - **TenantGroup permissions** (via `user.tenant_groups.all()`)
+3. Returns `True` if permission found in any source
+4. Result is cached in `_perm_cache` for performance
+
+**Benefits:**
+
+- ✅ No need to duplicate permissions to `user.user_permissions`
+- ✅ Permissions managed at group level (tenant-scoped)
+- ✅ Works with Django's standard `has_perm()` checks
+- ✅ Seamless integration with Django REST Framework permissions
+- ✅ Performance optimized with multi-level caching
 
 **Example Usage:**
 
@@ -860,14 +918,16 @@ For full documentation, see [Group Tenant Isolation](./group-tenant-isolation.md
 - [Note Tenant Isolation](./note-tenant-isolation.md) - Note model tenant isolation implementation
 - [User Tenant Isolation](./user-tenant-isolation.md) - User model tenant isolation implementation
 - [Group Tenant Isolation](./group-tenant-isolation.md) - TenantGroup model tenant isolation implementation
-- [Tenant Admin Permissions](./tenant-admin-permissions.md) - Automatic tenant admin creation and Django permissions fix
+- [Tenant Admin Permissions](./tenant-admin-permissions.md) - TenantGroupBackend authentication and automatic admin creation
 - [Thread-Local Tenant Context](./thread-local-tenant-context.md) - **Critical**: Shared storage implementation and bug fix
 - [Security Debt Tracker](./deferred-findings.md) - Known security issues and deferred findings
 - [PostgreSQL Row-Level Security Documentation](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
 - [Django Middleware Documentation](https://docs.djangoproject.com/en/stable/topics/http/middleware/)
+- [Django Authentication Backends](https://docs.djangoproject.com/en/stable/topics/auth/customizing/#authentication-backends)
 - [OWASP Multi-Tenancy Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multitenant_Architecture_Cheat_Sheet.html)
 - Migration: `src/documents/migrations/1081_enable_row_level_security.py`
 - Middleware: `src/paperless/middleware.py`
+- Authentication Backend: `src/paperless/auth_backends.py`
 
 ---
 
