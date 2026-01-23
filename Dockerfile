@@ -51,6 +51,8 @@ ARG S6_BUILD_TIME_PKGS="curl \
                         xz-utils"
 
 RUN set -eux \
+    && echo "Fixing /tmp permissions for apt-get" \
+      && chmod 1777 /tmp \
     && echo "Installing build time packages" \
       && apt-get update \
       && apt-get install --yes --quiet --no-install-recommends ${S6_BUILD_TIME_PKGS} \

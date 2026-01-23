@@ -36,7 +36,7 @@ services:
       POSTGRES_PASSWORD: ${APP_POSTGRES_PASSWORD:-paperless_dev_pass}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "8432:5432"
+      - "8433:5432"
     volumes:
       - paless-app-postgres-data:/var/lib/postgresql/data
     networks:
@@ -75,8 +75,8 @@ services:
       MINIO_ROOT_USER: ${APP_MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${APP_MINIO_ROOT_PASSWORD:-minioadmin123}
     ports:
-      - "8000:9000"  # S3 API
-      - "8001:9001"  # Console
+      - "8002:9000"  # S3 API
+      - "8003:9001"  # Console
     volumes:
       - paless-app-minio-data:/data
     networks:
