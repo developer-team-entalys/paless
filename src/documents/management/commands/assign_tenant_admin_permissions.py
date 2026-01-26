@@ -28,6 +28,13 @@ class Command(BaseCommand):
         parser.formatter_class = RawTextHelpFormatter
         return parser
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--list',
+            action='store_true',
+            help='List all tenant admin users and their permission counts without making changes'
+        )
+
     def handle(self, *args, **options):
         # Import here to avoid circular imports
         from documents.signals.tenant_handlers import get_admin_permissions
@@ -44,12 +51,6 @@ class Command(BaseCommand):
             )
             return
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Found {len(admin_permissions)} admin permissions to assign"
-            )
-        )
-
         # Find all tenant admin users (pattern: {subdomain}-admin)
         admin_users = User.objects.filter(
             username__endswith='-admin',
@@ -65,6 +66,44 @@ class Command(BaseCommand):
                 )
             )
             return
+
+        # Handle --list option
+        if options.get('list'):
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Found {len(admin_permissions)} admin permissions available"
+                )
+            )
+            self.stdout.write(
+                self.style.NOTICE(
+                    f"Found {admin_users.count()} tenant admin users:\n"
+                )
+            )
+
+            for user in admin_users:
+                current_perms = user.user_permissions.count()
+                status = "✓" if current_perms >= len(admin_permissions) else "✗"
+                style = self.style.SUCCESS if current_perms >= len(admin_permissions) else self.style.ERROR
+
+                self.stdout.write(
+                    style(
+                        f"  {status} {user.username}: {current_perms} permissions"
+                    )
+                )
+
+            self.stdout.write(
+                self.style.NOTICE(
+                    f"\nRun without --list to assign permissions to users with missing permissions"
+                )
+            )
+            return
+
+        # Normal operation: assign permissions
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Found {len(admin_permissions)} admin permissions to assign"
+            )
+        )
 
         self.stdout.write(
             self.style.NOTICE(
